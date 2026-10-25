@@ -1,0 +1,7 @@
+| Path | What it’s for |
+|---|---|
+| `D:\PROJECTS\commerce-engagement-platform\apps\api` | Express and MongoDB backend |
+| `D:\PROJECTS\commerce-engagement-platform\apps\web` | React and Tailwind storefront |
+| `D:\PROJECTS\commerce-engagement-platform\docs` | Project, product, and architecture documentation |
+| `D:\PROJECTS\commerce-engagement-platform\e2e` | End-to-end testing area |
+| `D:\PROJECTS\commerce-engagement-platform\packages` | Code intended to be shared between apps |
