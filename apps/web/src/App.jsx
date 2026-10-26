@@ -1,4 +1,4 @@
-import { Link, Route, Routes, useNavigate } from "react-router";
+import { Link, Route, Routes, useNavigate, useLocation } from "react-router";
 import { useAuth } from "./features/auth/useAuth.js";
 import CatalogPage from "./features/catalog/CatalogPage.jsx";
 import LoginPage from "./features/auth/pages/LoginPage.jsx";
@@ -12,9 +12,9 @@ import AdminProductsPage from "./features/admin/pages/AdminProductsPage.jsx";
 import AdminCreateProductPage from "./features/admin/pages/AdminCreateProductPage.jsx";
 import BusinessPortalPage from "./features/business-portal/pages/BusinessPortalPage.jsx";
 import OrderDetailsPage from "./features/orders/pages/OrderDetailsPage.jsx";
+import HomePage from "./features/home/pages/HomePage.jsx";
 
 function Placeholder({ title }) {
-
   return (
     <section className="mx-auto max-w-7xl px-6 py-24">
       <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-700">
@@ -32,6 +32,7 @@ export default function App() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
+  const isHomePage = useLocation().pathname === "/";
 
   function handleLogout() {
     logout();
@@ -39,99 +40,104 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa] text-slate-950">
-      <div className="bg-[#071a33] px-4 py-2 text-center text-xs tracking-wide text-white/80">
-        Thoughtful essentials. Made for everyday life.
-      </div>
-
-      <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <Link
-            to="/"
-            className="shrink-0 text-lg font-semibold tracking-tight"
-          >
-            COMMON<span className="text-blue-700">FORM</span>
-          </Link>
-
-          <nav
-            aria-label="Main navigation"
-            className="flex items-center gap-4 text-sm sm:gap-8"
-          >
+    <div
+      className={
+        isHomePage
+          ? "min-h-screen bg-[#06233f]"
+          : "min-h-screen bg-[#f5f7fa] text-slate-950"
+      }
+    >
+      {!isHomePage && (
+        <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-4 sm:px-8">
             <Link
-              className="text-slate-700 transition hover:text-blue-700"
               to="/"
+              className="shrink-0 text-lg font-semibold tracking-tight"
             >
-              Shop
+              COMMON<span className="text-blue-700">FORM</span>
             </Link>
 
-            <Link
-              className="flex items-center gap-2 text-slate-700 transition hover:text-blue-700"
-              to="/cart"
+            <nav
+              aria-label="Main navigation"
+              className="flex items-center gap-4 text-sm sm:gap-8"
             >
-              Cart
-              {itemCount > 0 && (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#071a33] px-1.5 text-xs text-white">
-                  {itemCount}
-                </span>
-              )}
-            </Link>
-
-            {user?.role === "ADMIN" && (
               <Link
-                to="/admin/products"
-                className="text-slate-700 hover:text-blue-700"
+                className="text-slate-700 transition hover:text-blue-700"
+                to="/"
               >
-                Admin
+                Shop
               </Link>
-            )}
 
-            {isAuthenticated ? (
-              <>
-                <span className="hidden text-slate-500 md:block">
-                  Hi, {user?.name}
-                </span>
+              <Link
+                className="flex items-center gap-2 text-slate-700 transition hover:text-blue-700"
+                to="/cart"
+              >
+                Cart
+                {itemCount > 0 && (
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#071a33] px-1.5 text-xs text-white">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+
+              {user?.role === "ADMIN" && (
                 <Link
-                  className="hidden text-slate-700 transition hover:text-blue-700 sm:block"
-                  to="/orders"
+                  to="/admin/products"
+                  className="text-slate-700 hover:text-blue-700"
                 >
-                  Orders
+                  Admin
                 </Link>
-                <Link
-                  className="text-slate-700 transition hover:text-blue-700"
-                  to="/business"
-                >
-                  Business
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="font-medium text-slate-700 transition hover:text-blue-700"
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  className="text-slate-700 transition hover:text-blue-700"
-                  to="/login"
-                >
-                  Login
-                </Link>
-                <Link
-                  className="hidden rounded-full bg-[#071a33] px-4 py-2 font-medium text-white transition hover:bg-blue-900 sm:block"
-                  to="/register"
-                >
-                  Join
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+              )}
+
+              {isAuthenticated ? (
+                <>
+                  <span className="hidden text-slate-500 md:block">
+                    Hi, {user?.name}
+                  </span>
+                  <Link
+                    className="hidden text-slate-700 transition hover:text-blue-700 sm:block"
+                    to="/orders"
+                  >
+                    Orders
+                  </Link>
+                  <Link
+                    className="text-slate-700 transition hover:text-blue-700"
+                    to="/business"
+                  >
+                    Business
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="font-medium text-slate-700 transition hover:text-blue-700"
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    className="text-slate-700 transition hover:text-blue-700"
+                    to="/login"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    className="hidden rounded-full bg-[#071a33] px-4 py-2 font-medium text-white transition hover:bg-blue-900 sm:block"
+                    to="/register"
+                  >
+                    Join
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
+        </header>
+      )}
 
       <Routes>
-        <Route path="/" element={<CatalogPage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/CatalogPage" element={<CatalogPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/cart" element={<CartPage />} />

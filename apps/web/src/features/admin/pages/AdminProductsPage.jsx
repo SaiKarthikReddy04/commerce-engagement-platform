@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useSelector } from "react-redux";
 import {
@@ -7,6 +7,8 @@ import {
   useDeleteAdminProductMutation,
 } from "../api/adminProductsApi.js";
 import AdminEditProductDialog from "../components/AdminEditProductDialog.jsx";
+import { showToast } from "../../../lib/toast.js";
+import Spinner from "../../../components/ui/Spinner.jsx";
 
 function formatPrice(price) {
   return new Intl.NumberFormat("en-IN", {
@@ -40,10 +42,18 @@ export default function AdminProductsPage() {
 
   const [updateAdminProduct, { isLoading: isUpdating }] =
     useUpdateAdminProductMutation();
-  const [deleteAdminProduct, { isLoading: isDeleting }] =
-    useDeleteAdminProductMutation();
-    
-  const { data, isLoading, error } = useListAdminProductsQuery(
+  const [
+    deleteAdminProduct,
+    { isLoading: isDeleting, isSuccess: isDeleteSuccess },
+  ] = useDeleteAdminProductMutation();
+
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error,
+    refetch: refetchAdminProducts,
+  } = useListAdminProductsQuery(
     {
       page,
       limit: 20,
@@ -51,6 +61,12 @@ export default function AdminProductsPage() {
     },
     { skip: !isAdmin },
   );
+
+  useEffect(() => {
+    if (isDeleteSuccess) {
+      refetchAdminProducts();
+    }
+  }, [isDeleteSuccess, refetchAdminProducts]);
 
   async function handleSaveEdit(updates) {
     setActionError("");
@@ -92,52 +108,52 @@ export default function AdminProductsPage() {
           "Could not move the product to draft.",
       );
     }
-    }
+  }
 
-    async function handleMoveToActive(product) {
-      const confirmed = window.confirm(
-        `Move "${product.name}" to active? It will appear in the storefront.`,
+  async function handleMoveToActive(product) {
+    const confirmed = window.confirm(
+      `Move "${product.name}" to active? It will appear in the storefront.`,
+    );
+
+    if (!confirmed) return;
+
+    setActionError("");
+
+    try {
+      await updateAdminProduct({
+        productId: product._id,
+        updates: { status: "ACTIVE" },
+      }).unwrap();
+    } catch (requestError) {
+      setActionError(
+        requestError?.data?.error?.message ||
+          requestError?.error ||
+          "Could not move the product to draft.",
       );
-
-      if (!confirmed) return;
-
-      setActionError("");
-
-      try {
-        await updateAdminProduct({
-          productId: product._id,
-          updates: { status: "ACTIVE" },
-        }).unwrap();
-      } catch (requestError) {
-        setActionError(
-          requestError?.data?.error?.message ||
-            requestError?.error ||
-            "Could not move the product to draft.",
-        );
-      }
     }
-    
-    async function handleDeleteDraft(product) {
-      if (product.status !== "DRAFT") return;
+  }
 
-      const confirmed = window.confirm(
-        `Permanently delete draft "${product.name}"? This cannot be undone.`,
+  async function handleDeleteDraft(product) {
+    const confirmed = window.confirm(
+      `Permanently delete draft "${product.name}"? This cannot be undone.`,
+    );
+
+    if (!confirmed) return;
+
+    setActionError("");
+
+    try {
+      await deleteAdminProduct(product._id).unwrap();
+      showToast("Product deleted.", "success");
+    } catch (requestError) {
+      showToast(
+        requestError?.data?.error?.message ||
+          requestError?.error ||
+          "Could not delete the draft product.",
+        "failure",
       );
-
-      if (!confirmed) return;
-
-      setActionError("");
-
-      try {
-        await deleteAdminProduct(product._id).unwrap();
-      } catch (requestError) {
-        setActionError(
-          requestError?.data?.error?.message ||
-            requestError?.error ||
-            "Could not delete the draft product.",
-        );
-      }
     }
+  }
 
   if (!accessToken) {
     return (
@@ -175,8 +191,8 @@ export default function AdminProductsPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-7xl px-6 py-24 text-slate-600">
-        Loading products…
+      <main className="mx-auto flex max-w-7xl justify-center px-6 py-24">
+        <Spinner size="lg" label="Loading products…" />
       </main>
     );
   }
@@ -194,8 +210,8 @@ export default function AdminProductsPage() {
   const products = data?.products ?? [];
   const pagination = data?.pagination;
 
-    // console.log("products data:", products[0].images[0].url);
-    
+  // console.log("products data:", products[0].images[0].url);
+
   return (
     <main className="mx-auto max-w-7xl px-6 py-16 sm:px-10 lg:px-16">
       <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-700">
@@ -246,6 +262,12 @@ export default function AdminProductsPage() {
         </p>
       )}
 
+      {isFetching && !isLoading && (
+        <div className="mt-5 flex justify-center">
+          <Spinner size="sm" label="Updating products…" />
+        </div>
+      )}
+
       <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="w-full min-w-[840px] text-left text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -263,91 +285,89 @@ export default function AdminProductsPage() {
 
           <tbody className="divide-y divide-slate-100">
             {products.map((product) => {
-                const firstImage = product.images?.[0];
-                const imageUrl =
-                  typeof firstImage === "string" ? firstImage : firstImage?.url;
-            
-                  return (
-                    <tr key={product._id} className="text-slate-700">
-                      <td className="px-5 py-4 font-medium text-slate-950">
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={product.name}
-                            className="h-16 w-16 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div
-                            aria-label="No product image"
-                            className="h-16 w-16 rounded-lg bg-slate-200"
-                          />
-                        )}
-                      </td>
-                      <td className="px-5 py-4 font-medium text-slate-950">
-                        {product.name}
-                      </td>
-                      <td className="px-5 py-4">{product.sku}</td>
-                      <td className="px-5 py-4">{product.category}</td>
-                      <td className="px-5 py-4">
-                        {formatPrice(product.price)}
-                      </td>
-                      <td className="px-5 py-4">{product.stockQuantity}</td>
-                      <td className="px-5 py-4">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(product.status)}`}
+              const firstImage = product.images?.[0];
+              const imageUrl =
+                typeof firstImage === "string" ? firstImage : firstImage?.url;
+
+              return (
+                <tr key={product._id} className="text-slate-700">
+                  <td className="px-5 py-4 font-medium text-slate-950">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={product.name}
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div
+                        aria-label="No product image"
+                        className="h-16 w-16 rounded-lg bg-slate-200"
+                      />
+                    )}
+                  </td>
+                  <td className="px-5 py-4 font-medium text-slate-950">
+                    {product.name}
+                  </td>
+                  <td className="px-5 py-4">{product.sku}</td>
+                  <td className="px-5 py-4">{product.category}</td>
+                  <td className="px-5 py-4">{formatPrice(product.price)}</td>
+                  <td className="px-5 py-4">{product.stockQuantity}</td>
+                  <td className="px-5 py-4">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(product.status)}`}
+                    >
+                      {product.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActionError("");
+                          setEditingProduct(product);
+                        }}
+                        className="font-medium text-blue-700 hover:text-blue-900"
+                      >
+                        Edit
+                      </button>
+
+                      {product.status !== "DRAFT" && (
+                        <button
+                          type="button"
+                          onClick={() => handleMoveToDraft(product)}
+                          disabled={isUpdating}
+                          className="font-medium text-amber-700 hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-50 hover:cursor-pointer "
                         >
-                          {product.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-4">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActionError("");
-                              setEditingProduct(product);
-                            }}
-                            className="font-medium text-blue-700 hover:text-blue-900"
-                          >
-                            Edit
-                          </button>
+                          Draft
+                        </button>
+                      )}
 
-                          {product.status !== "DRAFT" && (
-                            <button
-                              type="button"
-                              onClick={() => handleMoveToDraft(product)}
-                              disabled={isUpdating}
-                              className="font-medium text-amber-700 hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-50 hover:text-amber-900 hover:cursor-pointer "
-                            >
-                              Move to draft
-                            </button>
-                          )}
+                      {product.status === "DRAFT" && (
+                        <button
+                          type="button"
+                          onClick={() => handleMoveToActive(product)}
+                          disabled={isUpdating}
+                          className="font-medium text-green-700 hover:text-green-900 disabled:cursor-not-allowed disabled:opacity-50 hover:cursor-pointer"
+                        >
+                          Active
+                        </button>
+                      )}
 
-                          {product.status === "DRAFT" && (
-                            <button
-                              type="button"
-                              onClick={() => handleMoveToActive(product)}
-                              disabled={isUpdating}
-                              className="font-medium text-green-700 hover:text-green-900 disabled:cursor-not-allowed disabled:opacity-50 hover:text-green-900 hover:cursor-pointer"
-                            >
-                              Move to active
-                            </button>
-                          )}
-
-                          {
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteDraft(product)}
-                              disabled={isDeleting}
-                              className="font-medium text-red-700 hover:text-red-900 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              Delete permanently
-                            </button>
-                          }
-                        </div>
-                      </td>
-                    </tr>
-                  );
+                      {
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDraft(product)}
+                          disabled={isDeleting}
+                          className="font-medium text-red-700 hover:text-red-900 disabled:cursor-not-allowed disabled:opacity-50 hover:cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              );
             })}
 
             {products.length === 0 && (

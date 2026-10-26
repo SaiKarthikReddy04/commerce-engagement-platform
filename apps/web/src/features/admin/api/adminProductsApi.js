@@ -44,7 +44,6 @@ export const adminProductsApi = baseApi.injectEndpoints({
         url: `/products/${productId}`,
         method: "DELETE",
       }),
-      transformResponse: (response) => response.data,
       invalidatesTags: [{ type: "AdminProducts", id: "LIST" }, "Products"],
     }),
   }),
