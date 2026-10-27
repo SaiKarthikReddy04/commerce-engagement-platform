@@ -33,6 +33,7 @@ export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
   const isHomePage = useLocation().pathname === "/";
+  // const isHomePage = false;
 
   function handleLogout() {
     logout();
@@ -137,6 +138,7 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<HomePage />} />
+        {/* <Route path="/" element={<CatalogPage />} /> */}
         <Route path="/CatalogPage" element={<CatalogPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

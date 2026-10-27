@@ -23,93 +23,105 @@ export default function HeroScene({ product }) {
 
   useGSAP(
     () => {
-        const root = sceneRef.current;
+      const root = sceneRef.current;
 
-        if (
-          !root ||
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ) {
-          return;
-        }
+      if (
+        !root ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        return;
+      }
 
-        const featureVisual = root.querySelector(".home-feature-visual");
+      // The stage water is outside this component, so find it from the stage.
+      const stageWater = root
+        .closest(".home-stage")
+        ?.querySelector(".home-stage-water");
 
-        gsap.set(
-          [
-            ".home-stage-water",
-            ".home-panel-water",
-            ".home-headline-line",
-            ".home-hero-meta",
-            ".home-hero-cta",
-          ],
-          { autoAlpha: 0 },
+      // These elements are inside HeroScene.
+      const panelWater = root.querySelector(".home-panel-water");
+      const headlineLines = root.querySelectorAll(".home-headline-line");
+      const heroMeta = root.querySelectorAll(".home-hero-meta");
+      const heroCta = root.querySelector(".home-hero-cta");
+      const featureVisual = root.querySelector(".home-feature-visual");
+
+      gsap.set(
+        [
+          stageWater,
+          panelWater,
+          ...headlineLines,
+          ...heroMeta,
+          heroCta,
+          featureVisual,
+        ].filter(Boolean),
+        { autoAlpha: 0 },
+      );
+
+      const intro = gsap.timeline({
+        defaults: { ease: "power3.out" },
+      });
+
+      if (stageWater) {
+        intro.to(stageWater, { autoAlpha: 0.88, duration: 0.9 });
+      }
+
+      if (panelWater) {
+        intro.to(
+          panelWater,
+          { autoAlpha: 0.3, duration: 0.9 },
+          stageWater ? "-=0.45" : 0,
         );
+      }
 
-        if (featureVisual) {
-          gsap.set(featureVisual, { autoAlpha: 0 });
-        }
+      if (featureVisual) {
+        intro.fromTo(
+          featureVisual,
+          { autoAlpha: 0, scale: 0.9, y: 24 },
+          { autoAlpha: 1, scale: 1, y: 0, duration: 0.95 },
+          "+=0.08",
+        );
+      }
 
-        const intro = gsap.timeline({
-          defaults: { ease: "power3.out" },
+      if (headlineLines.length) {
+        intro.fromTo(
+          headlineLines,
+          { autoAlpha: 0, yPercent: 110 },
+          {
+            autoAlpha: 1,
+            yPercent: 0,
+            duration: 0.85,
+            stagger: 0.1,
+          },
+          "-=0.12",
+        );
+      }
+
+      if (heroMeta.length) {
+        intro.fromTo(
+          heroMeta,
+          { autoAlpha: 0, y: 12 },
+          { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.12 },
+          "-=0.18",
+        );
+      }
+
+      if (heroCta) {
+        intro.fromTo(
+          heroCta,
+          { autoAlpha: 0, y: 12 },
+          { autoAlpha: 1, y: 0, duration: 0.65 },
+          "-=0.15",
+        );
+      }
+
+      if (featureVisual) {
+        intro.to(featureVisual, {
+          y: -7,
+          duration: 2.2,
+          ease: "sine.inOut",
+          repeat: -1,
+          yoyo: true,
         });
-
-        intro
-          .to(".home-stage-water", {
-            autoAlpha: 0.88,
-            duration: 0.9,
-          })
-          .to(
-            ".home-panel-water",
-            {
-              autoAlpha: 0.3,
-              duration: 0.9,
-            },
-            "-=0.45",
-          );
-
-        if (featureVisual) {
-          intro.fromTo(
-            featureVisual,
-            { autoAlpha: 0, scale: 0.9, y: 24 },
-            { autoAlpha: 1, scale: 1, y: 0, duration: 0.95 },
-            "+=0.08",
-          );
-        }
-
-        intro
-          .fromTo(
-            ".home-headline-line",
-            { autoAlpha: 0, yPercent: 110 },
-            {
-              autoAlpha: 1,
-              yPercent: 0,
-              duration: 0.85,
-              stagger: 0.1,
-            },
-            "-=0.12",
-          )
-          .fromTo(
-            ".home-hero-meta",
-            { autoAlpha: 0, y: 12 },
-            { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.12 },
-            "-=0.18",
-          )
-          .fromTo(
-            ".home-hero-cta",
-            { autoAlpha: 0, y: 12 },
-            { autoAlpha: 1, y: 0, duration: 0.65 },
-            "-=0.15",
-          );
-
-        if (featureVisual) {
-          intro.to(featureVisual, {
-            y: -7,
-            duration: 2.2,
-            ease: "sine.inOut",
-            repeat: -1,
-            yoyo: true,
-          });
-        }
+      }
     },
     { scope: sceneRef, dependencies: [productId], revertOnUpdate: true },
   );
@@ -117,7 +129,7 @@ export default function HeroScene({ product }) {
   return (
     <div
       ref={sceneRef}
-      className="relative isolate grid min-h-[100svh] place-items-center overflow-hidden bg-transparent p-2 sm:p-4 lg:p-5"
+      className="relative isolate grid min-h-[100svh] place-items-center overflow-hidden bg-transparent p-1"
     >
       {/* <div className="absolute inset-0 -z-10 bg-[#489ae1]" /> */}
 
@@ -130,7 +142,7 @@ export default function HeroScene({ product }) {
           aria-hidden="true"
         />
 
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#06233f]/75 via-[#06233f]/65 to-[#06233f]/90" />
+        <div className="absolute inset-0 -z-10" />
 
         {/* <nav
           aria-label="Home"
