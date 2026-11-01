@@ -11,7 +11,7 @@ import {
 } from "./order.repository.js";
 import { Organization } from "../organizations/organization.model.js";
 import { OrganizationMembership } from "../organizations/organization-membership.model.js";
-
+import { invalidateProductLists } from "../catalog/product.cache.js";
 
 function createError(statusCode, code, message) {
   const error = new Error(message);
@@ -157,6 +157,7 @@ export async function placeOrder(userId, organizationId = null) {
       createdOrder = order;
     });
 
+    await invalidateProductLists();
     return createdOrder;
   } finally {
     await session.endSession();
@@ -306,6 +307,10 @@ export async function reviewOrganizationOrder(
         reviewedOrder = order;
       });
   
+      if (stockChanged) {
+        await invalidateProductLists();
+      }
+
       return reviewedOrder;
     } finally {
       await session.endSession();
