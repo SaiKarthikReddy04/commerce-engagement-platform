@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Product } from "../catalog/product.model.js";
 import { Order } from "../orders/order.model.js";
+import { invalidateProductLists } from "../catalog/product.cache.js";
 
 function createError(statusCode, code, message) {
   const error = new Error(message);
@@ -67,6 +68,10 @@ export async function simulateOrderPayment(userId, orderId, outcome) {
       await order.save({ session });
       finalOrder = order;
     });
+
+    if (stockChanged) {
+      await invalidateProductLists();
+    }
 
     return finalOrder;
   } finally {

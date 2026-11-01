@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 import * as productRepository from "./product.repository.js";
+import { getJson, setJson } from "../../infrastructure/cache/cache.service.js";
+import {
+  getProductListCacheVersion,
+  invalidateProductLists,
+  productListCacheKey,
+  PRODUCT_LIST_CACHE_TTL_SECONDS,
+} from "./product.cache.js";
 
 function createError(statusCode, message) {
   const error = new Error(message);
@@ -53,10 +60,31 @@ export async function listProducts(query = {}, { admin = false } = {}) {
     filter.status = "ACTIVE";
   }
 
-  const sort =
+  const sortKey =
     typeof query.sort === "string" && PRODUCT_SORTS[query.sort]
-      ? PRODUCT_SORTS[query.sort]
-      : PRODUCT_SORTS.newest;
+      ? query.sort
+      : "newest";
+
+  const sort = PRODUCT_SORTS[sortKey];
+
+  // Cache only public catalog results. Admin results always come from MongoDB.
+  const cacheVersion = admin ? null : await getProductListCacheVersion();
+
+  const cacheKey = admin
+    ? null
+    : productListCacheKey({
+        version: cacheVersion,
+        page,
+        limit,
+        category: filter.category ?? "",
+        search,
+        sort: sortKey,
+      });
+
+  if (cacheKey) {
+    const cachedResult = await getJson(cacheKey);
+    if (cachedResult) return cachedResult;
+  }
 
   const skip = (page - 1) * limit;
 
@@ -65,7 +93,7 @@ export async function listProducts(query = {}, { admin = false } = {}) {
     productRepository.countProducts(filter),
   ]);
 
-  return {
+  const result = {
     items,
     pagination: {
       page,
@@ -74,6 +102,12 @@ export async function listProducts(query = {}, { admin = false } = {}) {
       pages: Math.ceil(total / limit),
     },
   };
+
+  if (cacheKey) {
+    await setJson(cacheKey, result, PRODUCT_LIST_CACHE_TTL_SECONDS);
+  }
+
+  return result;
 }
 
 export async function getProductById(id, { admin = false } = {}) {
@@ -90,7 +124,9 @@ export async function getProductById(id, { admin = false } = {}) {
 
 export async function createProduct(productData) {
   try {
-    return await productRepository.createProduct(productData);
+    const product = await productRepository.createProduct(productData);
+    await invalidateProductLists();
+    return product;
   } catch (error) {
     if (error.code === 11000) {
       throw createError(409, "A product with that SKU already exists.");
@@ -123,7 +159,7 @@ export async function updateProductById(id, productData) {
   }
 
   const product = await productRepository.updateProductById(id, updates);
-
+  await invalidateProductLists();
   if (!product) {
     throw createError(404, "Product not found.");
   }
@@ -135,6 +171,7 @@ export async function deleteProductById(id) {
   validateProductId(id);
 
   const product = await productRepository.deleteProductById(id);
+  await invalidateProductLists();
 
   if (!product) {
     throw createError(404, "Product not found.");
