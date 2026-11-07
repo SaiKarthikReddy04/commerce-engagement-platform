@@ -2,6 +2,10 @@
 
 A full-stack B2B/B2C commerce platform built with the MERN stack. Shoppers can browse products, manage a cart, and place orders. Organizations can manage team members and review orders that require approval.
 
+## Demo
+
+https://github.com/user-attachments/assets/7c807e27-7cca-490b-b20d-cd4856de2e48
+
 ## Features
 
 - Product catalog with search, category filters, sorting, and pagination
