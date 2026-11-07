@@ -4,14 +4,19 @@ A full-stack B2B/B2C commerce platform built with the MERN stack. Shoppers can b
 
 ## Demo
 
-https://github.com/user-attachments/assets/7c807e27-7cca-490b-b20d-cd4856de2e48
+
+https://github.com/user-attachments/assets/1eb79f1c-e950-407a-98b3-3128a25b0ac7
+
+
 
 ## Features
 
 - Product catalog with search, category filters, sorting, and pagination
 - Product details, stock availability, and admin product management
 - Authenticated shopping cart and checkout
-- Order history and order details
+- Order history and order deta
+
+ils
 - JWT authentication with role-based access control
 - Organization creation, member management, and B2B order approval
 - Inventory updates when orders are placed, rejected, or fail payment
